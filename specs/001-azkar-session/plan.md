@@ -53,7 +53,7 @@ cold start under ~2 s on mid-range Android.
 LISTEN never overlap; azkar text/counts byte-identical to source.
 
 **Scale/Scope**: 2 azkar lists (~25 items each), 3 screens (Home, Session, Settings), 1 session
-engine, 5 service abstractions. Single user, single device, no accounts.
+engine, 6 service abstractions (tts, vad, notification, storage, permission, cue). Single user, single device, no accounts.
 
 **Driving-mode additions**: a thin `Announcer` (pure Dart: builds the Arabic count phrase + cue
 plan from an item) feeding the existing `TtsService`; an extended phrase lifecycle

@@ -80,6 +80,6 @@ class SessionController {
 |-----------------|--------------|--------|
 | stop guard      | 250 ms       | route teardown before mic |
 | minSpeech       | ~max(0.6s, 0.04s × textChars) | reject coughs (FR-006) |
-| silenceWindow   | 1.5–2.0 s    | "finished reciting" (FR-005) |
+| silenceWindow   | 1.8 s (default; 1.5–2.0 tunable) | "finished reciting" (FR-005) |
 | safetyTimeout   | 8–10 s       | surface Done (FR-009) |
 | amplitude poll  | 100–200 ms   | VAD sampling |
