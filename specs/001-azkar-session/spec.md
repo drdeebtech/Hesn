@@ -8,6 +8,17 @@
 
 **Input**: User description: "Morning & evening azkar app (حصن / Hesn) — a guided dhikr session that reads each phrase aloud, listens only to confirm the user finished reciting, then advances; with manual Done/Skip fallback, daily reminders, local progress, and Arabic RTL UI."
 
+## Clarifications
+
+### Session 2026-06-01
+
+- Q: v1 release rule for the evening azkar (6 variants transcribed because the source truncated them)? → A: Block public release until the evening list is verbatim-complete and signed off by a competent Arabic speaker (T045).
+- Q: Behavior when the device has no Arabic TTS voice installed? → A: Fall back to text-only (no audio), keep the session fully usable via manual/VAD, and show a one-time notice.
+- Q: Behavior when a session is interrupted (call/backgrounded) on return? → A: Keep the user's place and replay the current phrase from the start (PLAY→STOP→LISTEN restarts for that item).
+- Q: Default VAD timings? → A: Silence-to-advance 1.8s; safety timeout 9s; minimum speech scales with phrase length.
+- Q: Primary use context and interaction model? → A: Used while driving — a full audio-first, eyes-free, no-touch mode is the primary experience: the app speaks each phrase, announces transitions and session start/finish, and advances by voice, so the user never needs to look at or tap the phone.
+- Q: How are repeat counts conveyed when the screen can't be seen? → A: The app audibly announces the count (e.g. "ثلاث مرات") then reads the phrase once; the user recites it the stated number of times and pauses to advance (still one advance per phrase).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Complete a guided morning/evening session by voice (Priority: P1)
@@ -131,7 +142,13 @@ and take effect.
 - **Very quiet recitation**: The Done button remains available and the safety timeout surfaces it;
   sensitivity can be increased in settings.
 - **App interrupted mid-session** (call, backgrounded): Audio playback and the mic MUST stop; on
-  return the user can resume or restart the current phrase without the mic having stayed active.
+  return the app MUST keep the user's place and replay the current phrase from the start
+  (PLAY→STOP→LISTEN restarts for that item), so an eyes-free user is not stranded.
+- **No Arabic TTS voice installed**: The app MUST fall back to text-only (no audio) while keeping
+  the session fully usable, and show a one-time notice. (Eyes-free use is degraded in this state.)
+- **Multi-repeat item while hands-free** (e.g. ×3, ×10, ×100): the silence-to-advance window MUST be
+  tuned so brief pauses between repetitions do not advance early; advancing relies on a deliberate
+  longer pause after the final repetition. Final values set during on-device tuning.
 - **Date rolls over mid-session** (session started before midnight): Completion is recorded against
   the day the session is completed.
 - **Reminder time already passed today**: The next occurrence MUST be scheduled for the following
@@ -205,6 +222,22 @@ and take effect.
 
 - **FR-023**: The entire UI MUST be in Arabic with a right-to-left layout.
 
+**Hands-free / eyes-free (driving) — primary mode**
+
+- **FR-024**: A full session MUST be operable entirely by audio — the user MUST be able to start,
+  progress through, and complete a list without looking at or touching the screen.
+- **FR-025**: Before (or as) it reads each phrase, the app MUST audibly announce that phrase's
+  repeat count (e.g. "ثلاث مرات"); for a count of one it MAY omit the announcement.
+- **FR-026**: The app MUST announce session start and session completion audibly, and MUST give an
+  audible cue at each phrase transition, so progress is perceivable without the screen.
+- **FR-027**: The app MUST let the user begin the correct session (morning/evening) with a single
+  action from the reminder notification (and/or auto-start the time-appropriate list), to avoid
+  on-screen navigation while driving.
+- **FR-028**: When no Arabic TTS voice is available, the app MUST fall back to text-only operation,
+  keep the session usable, and show a one-time notice.
+- **FR-029**: After an interruption (call/background), on return the app MUST keep the user's place
+  and replay the current phrase from the start.
+
 ### Key Entities *(include if feature involves data)*
 
 - **Azkar List**: A named collection (morning or evening) of ordered items. Attributes: identifier,
@@ -236,6 +269,11 @@ and take effect.
   phrase.
 - **SC-008**: All azkar text and repeat counts shown in the app match the stakeholder-provided
   Hisn al-Muslim source exactly, with no character-level differences, as confirmed by review.
+- **SC-009**: A user can start, work through, and complete a full list **without ever looking at or
+  touching the screen** — audio alone conveys the phrase, its repeat count, transitions, and
+  completion (the driving scenario).
+- **SC-010**: From a delivered reminder, the user can begin the correct session with a single action
+  (one tap, or automatically) — no on-screen navigation required.
 
 ## Assumptions
 
@@ -246,8 +284,11 @@ and take effect.
   is expected.
 - Audio output is via text-to-speech for the first release; pre-recorded audio may replace it later
   without changing the session flow.
-- Default silence-to-advance threshold is ~1.5–2 seconds and the safety timeout is 8–10 seconds;
-  exact values are tuned on real devices.
+- Default silence-to-advance threshold is 1.8 seconds and the safety timeout is 9 seconds; minimum
+  speech scales with phrase length. Exact values (especially the inter-repetition gap for
+  multi-repeat items in hands-free use) are tuned on real devices.
+- The evening azkar list is NOT released publicly until it is verbatim-complete and signed off by a
+  competent Arabic speaker; the six transcribed evening variants are provisional until then.
 - Mobile platforms only: Android is the first release target, iOS follows. Web and desktop are out
   of scope.
 - Sensible defaults for reminder times and sensitivity allow the app to be used without opening
