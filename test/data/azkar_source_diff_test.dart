@@ -8,9 +8,14 @@ import 'package:hesn/data/azkar_repository.dart';
 /// source. The source wraps phrases in delimiters and count annotations, so we
 /// check that each item's text is an exact substring of the source.
 void main() {
-  test('every azkar text is a verbatim substring of the committed source', () {
-    final source =
-        File('specs/001-azkar-session/source/azkar-source.txt').readAsStringSync();
+  test('every azkar text is a verbatim substring of a committed source', () {
+    // Original stakeholder paste + the transcribed (pending-review) evening
+    // variants. Every shipped phrase must appear verbatim in one of them.
+    final source = [
+      File('specs/001-azkar-session/source/azkar-source.txt').readAsStringSync(),
+      File('specs/001-azkar-session/source/azkar-evening-variants.txt')
+          .readAsStringSync(),
+    ].join('\n');
     final lists =
         AzkarRepository.parse(File('assets/azkar.json').readAsStringSync());
 
