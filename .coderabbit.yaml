@@ -1,0 +1,50 @@
+# CodeRabbit configuration for Hesn (أذكار) — https://docs.coderabbit.ai
+# Review is anchored to the project constitution (.specify/memory/constitution.md).
+language: en-US
+
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  review_status: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+      - develop
+      - "feat/.*"
+  path_instructions:
+    - path: "lib/session/**"
+      instructions: >
+        This is the constitution-critical session engine. Flag any change that
+        could let the microphone open while TTS is playing (Principle II:
+        PLAY → STOP → LISTEN must stay strictly sequential), or that could
+        advance more than once per phrase (Principle IV: exactly one advance
+        per phrase; repeat counts are display-only). Ensure the listening phase
+        is only entered after playback has stopped.
+    - path: "lib/services/vad_service.dart"
+      instructions: >
+        Privacy (Principle III): the mic must be amplitude-only. Reject any code
+        that writes audio to disk, performs speech-to-text, or sends audio off
+        the device.
+    - path: "lib/**"
+      instructions: >
+        No network calls anywhere (Principle III): flag http/dio/socket usage.
+        State management must be plain setState — no state-management libraries
+        (Principle VI). UI must remain Arabic and RTL (Principle V).
+    - path: "assets/azkar.json"
+      instructions: >
+        Sacred text (Principle I). Azkar text and repeat counts must be verbatim
+        from Hisn al-Muslim and fully voweled. Flag ANY change to existing text,
+        tashkīl, or repeat counts. quran items must keep their ref and never be
+        altered.
+    - path: "**/*_test.dart"
+      instructions: >
+        Verify tests still guard the non-negotiable invariants (PLAY→STOP→LISTEN
+        ordering, one-advance-per-phrase, no-network, verbatim source-diff). A PR
+        that weakens or removes these guards should be flagged.
+
+chat:
+  auto_reply: true
