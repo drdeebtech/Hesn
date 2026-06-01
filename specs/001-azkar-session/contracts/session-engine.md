@@ -7,10 +7,10 @@ is the basis for `test/session/session_controller_test.dart`.
 ## State machine
 
 ```
-        start(list)
- idle ───────────────▶ playing
-                         │  tts.speak(item.text) ; await completion
-                         ▼
+        start(list)                  announcing: if item.repeat>1, tts.speak(Announcer.count(item))
+ idle ───────────────▶ announcing ─▶ playing
+                         (driving)     │  tts.speak(item.text) ; await completion
+                                       ▼
                       stopping        (tts.stop(); guard delay ~250ms)
                          │
               ┌──────────┴───────────┐
@@ -38,7 +38,10 @@ is the basis for `test/session/session_controller_test.dart`.
 - **INV-2 (Principle II)**: Entering `listening` always follows a `stopping` in which
   `TtsService.stop()` resolved. No transition `playing → listening` directly.
 - **INV-3 (Principle IV)**: Each of {voice-complete, Done, Skip} advances `index` by exactly 1. No
-  path advances more than once for a single phrase. `repeat` never triggers an advance.
+  path advances more than once for a single phrase. `repeat` never triggers an advance. The
+  `announcing` phase speaks the count but performs **no** counting/advance.
+- **INV-6 (driving, Principle II)**: the mic is not opened during `announcing` either — listening is
+  still only reachable after `stopping`. Resume re-enters at `announcing` for the current item.
 - **INV-4**: On `done`, the active list is reported complete exactly once.
 - **INV-5 (Principle III/VII)**: Leaving `listening` for any reason calls `VadService.stop()`.
   Session teardown (exit/pause/background) calls both `tts.stop()` and `vad.stop()`.

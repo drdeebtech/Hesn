@@ -94,3 +94,50 @@ and the alternatives weighed.
   hand-rolled observable.
 - **Alternatives considered**: Provider/Riverpod/Bloc (forbidden by Principle VI); putting the state
   machine inside the widget (untestable without a device).
+
+## 8. Hands-free / eyes-free "driving mode" (FR-024–FR-029)
+
+- **Decision (audible repeat count)**: Add a pure-Dart `Announcer` that, for an item with
+  `repeat > 1`, produces an Arabic spoken count (e.g. 3 → "ثلاث مرات") spoken via `TtsService`
+  immediately before the phrase is read; `repeat == 1` is announced silently (no count). This is the
+  new `announcing` phase that precedes `playing`.
+- **Rationale**: While driving the user can't see `RepeatCounter`. Speaking the count keeps the
+  experience eyes-free without changing the "one advance per phrase" rule (Principle IV).
+- **Alternatives considered**: Reading the phrase aloud N times (longer audio, changes recite flow);
+  a tone per repeat (ambiguous for large counts) — rejected in favor of a single spoken count.
+
+- **Decision (transition + start/finish cues)**: Spoken cues for session start ("أذكار الصباح") and
+  completion ("اكتملت أذكار الصباح") via TTS; a short non-spoken cue on each phrase transition via
+  `SystemSound.play(SystemSoundType.click)` + `HapticFeedback`. A thin `CueService` abstracts these.
+- **Rationale**: Built-in platform facilities — **no new dependency** (Principle VI), no asset files.
+- **Alternatives considered**: `audioplayers`/`just_audio` + a bundled chime (extra dep + asset,
+  rejected); TTS-only cue words for transitions (too verbose between every phrase).
+
+- **Decision (one-tap / auto start)**: The reminder notification carries a payload identifying the
+  list; tapping it routes directly into that `SessionScreen` (deep link via the notification
+  response handler). Optionally an "auto-start on open from reminder" setting picks morning/evening
+  by time of day.
+- **Rationale**: Avoids on-screen navigation while driving (FR-027). Uses
+  `flutter_local_notifications` response payload — no new dependency.
+- **Alternatives considered**: Always landing on Home (requires taps); a home-screen widget/quick
+  tile (extra platform surface, deferred).
+
+- **Decision (no Arabic TTS voice → text-only)**: `TtsService` exposes `hasArabicVoice()` (queries
+  `getLanguages`/`isLanguageAvailable`). If false, the session skips audio (announcements + reading),
+  shows a one-time Arabic notice, and runs visually + via VAD/manual; everything else is unchanged.
+- **Rationale**: Graceful degradation (FR-028); keeps the app usable on devices lacking an ar voice.
+- **Alternatives considered**: Bundling a TTS engine (huge, not feasible); blocking the session
+  (violates Principle VII).
+
+- **Decision (resume = replay current phrase)**: On `AppLifecycleState.resumed`, if a session was
+  active, the controller re-enters the current item at `announcing` (re-announce count + re-read),
+  rather than staying silently paused.
+- **Rationale**: An eyes-free user who got interrupted hears where they are again (FR-029).
+- **Alternatives considered**: Silent pause requiring a tap (bad for driving); restart the whole
+  list (loses place).
+
+- **Decision (multi-repeat pause handling)**: Keep Principle IV — the app does **not** count
+  recitations. For ×3…×100 items the only risk is an inter-repetition pause tripping the silence
+  window; mitigated by tuning `silenceWindow` (default 1.8 s) on-device (T043). Speech-burst counting
+  was explicitly rejected as a Principle IV violation requiring a constitution amendment.
+- **Rationale**: Preserves the constitution; defers the hard real-world tuning to device testing.
