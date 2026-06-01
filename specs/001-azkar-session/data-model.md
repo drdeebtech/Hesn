@@ -28,6 +28,7 @@ Single phrase shown and recited.
 | `type`   | AzkarType   | Required. |
 | `text`   | String      | Required. Fully voweled Arabic, verbatim from source. Never altered. |
 | `repeat` | int         | Required, ≥ 1. Display-only; does not drive auto-advance (Principle IV). |
+| `countPhrase` | String? | Canonical Arabic count wording for the spoken announcement (e.g. `ثلاث مرات`, `مائة مرة`). Present when `repeat > 1`; null/omitted for `repeat == 1`. |
 | `source` | String      | Required, attribution (e.g. `حصن المسلم`). |
 | `ref`    | String?     | Required **iff** `type == quran` (e.g. `2:255`); null for dhikr. |
 
@@ -68,6 +69,7 @@ User preferences. Persisted as JSON in `shared_preferences` under key `app_setti
 | `eveningReminderTime`   | String | `16:30`  | `HH:mm` 24h local. |
 | `voiceDetectionEnabled` | bool   | `true`   | When false, sessions run manual-only. |
 | `sensitivity`           | double | `0.5`    | 0..1; maps to VAD amplitude threshold. |
+| `handsFreeMode`         | bool   | `true`   | Hands-free/driving mode: when on, spoken count + cues + start-from-reminder are active. |
 
 ## Relationships
 

@@ -18,6 +18,9 @@
 - Q: Default VAD timings? → A: Silence-to-advance 1.8s; safety timeout 9s; minimum speech scales with phrase length.
 - Q: Primary use context and interaction model? → A: Used while driving — a full audio-first, eyes-free, no-touch mode is the primary experience: the app speaks each phrase, announces transitions and session start/finish, and advances by voice, so the user never needs to look at or tap the phone.
 - Q: How are repeat counts conveyed when the screen can't be seen? → A: The app audibly announces the count (e.g. "ثلاث مرات") then reads the phrase once; the user recites it the stated number of times and pauses to advance (still one advance per phrase).
+- Q: Is the audio-first behavior always-on or a toggle? → A: A "hands-free / driving mode" setting, default ON, gates the spoken count, transition cues, and start-from-reminder; users may turn it off.
+- Q: How is the spoken repeat count phrased? → A: Use the source's canonical Arabic count wording (e.g. "ثلاث مرات", "سبع مرات", "مائة مرة"), stored per item, not a generated numeral.
+- Q: What does tapping a reminder notification do? → A: It starts that session immediately (opens straight into the running session for that list).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -225,14 +228,16 @@ and take effect.
 **Hands-free / eyes-free (driving) — primary mode**
 
 - **FR-024**: A full session MUST be operable entirely by audio — the user MUST be able to start,
-  progress through, and complete a list without looking at or touching the screen.
-- **FR-025**: Before (or as) it reads each phrase, the app MUST audibly announce that phrase's
-  repeat count (e.g. "ثلاث مرات"); for a count of one it MAY omit the announcement.
+  progress through, and complete a list without looking at or touching the screen. This audio-first
+  behavior is governed by a **"hands-free / driving mode" setting that defaults to ON**; when off,
+  the spoken count, transition cues, and start-from-reminder are suppressed.
+- **FR-025**: When hands-free mode is on, before reading each phrase the app MUST audibly announce
+  that phrase's repeat count using the **source's canonical Arabic wording** (e.g. "ثلاث مرات",
+  "سبع مرات", "مائة مرة"), stored per item; for a count of one it MUST omit the announcement.
 - **FR-026**: The app MUST announce session start and session completion audibly, and MUST give an
   audible cue at each phrase transition, so progress is perceivable without the screen.
-- **FR-027**: The app MUST let the user begin the correct session (morning/evening) with a single
-  action from the reminder notification (and/or auto-start the time-appropriate list), to avoid
-  on-screen navigation while driving.
+- **FR-027**: Tapping a reminder notification MUST start that list's session **immediately** (open
+  straight into the running session), avoiding on-screen navigation while driving.
 - **FR-028**: When no Arabic TTS voice is available, the app MUST fall back to text-only operation,
   keep the session usable, and show a one-time notice.
 - **FR-029**: After an interruption (call/background), on return the app MUST keep the user's place
@@ -243,11 +248,13 @@ and take effect.
 - **Azkar List**: A named collection (morning or evening) of ordered items. Attributes: identifier,
   Arabic title, ordered items.
 - **Azkar Item**: A single phrase. Attributes: identifier, type (regular dhikr or Qur'an), fully
-  voweled Arabic text, repeat count, source attribution, and (for Qur'an) a verse reference.
+  voweled Arabic text, repeat count, the canonical Arabic count phrase (when repeat > 1, for the
+  spoken announcement), source attribution, and (for Qur'an) a verse reference.
 - **Daily Progress**: Per-day record of which lists are completed. Attributes: morning completed,
   evening completed, the date the record applies to.
 - **Settings**: User preferences. Attributes: morning reminder time, evening reminder time,
-  voice-detection enabled, voice-detection sensitivity.
+  voice-detection enabled, voice-detection sensitivity, hands-free/driving mode enabled
+  (default on).
 
 ## Success Criteria *(mandatory)*
 
