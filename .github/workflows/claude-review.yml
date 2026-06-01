@@ -23,7 +23,7 @@ jobs:
           # Add ONE of these as a repo secret (Settings -> Secrets -> Actions):
           #   ANTHROPIC_API_KEY   (Anthropic API key), or
           #   CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`)
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          anthropic_api_key: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             Review this pull request for the Hesn azkar app. The project
             constitution (.specify/memory/constitution.md) is binding. Flag, as
