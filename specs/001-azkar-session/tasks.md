@@ -137,9 +137,9 @@ complete a list without looking at the screen.
 - [ ] T050 [US6] Add `countPhrase` to each multi-repeat item in `assets/azkar.json` using the source's canonical Arabic wording (3→ثلاث مرات, 4→أربع مرات, 7→سبع مرات, 10→عشر مرات, 100→مائة مرة); update `source/azkar-source.txt` coverage so T047 still passes.
 - [ ] T051 [US6] Add `countPhrase` (`String?`) to `AzkarItem.fromJson`/model (`lib/models/azkar.dart`); extend `test/data/azkar_repository_test.dart` to assert multi-repeat items carry a `countPhrase`.
 - [ ] T052 [P] [US6] [TEST] `test/session/announcer_test.dart`: `Announcer` returns the item's `countPhrase` for repeat>1 and null for repeat==1.
-- [ ] T053 [US6] Implement `Announcer` (`lib/session/announcer.dart`) — pure Dart: count announcement text + cue plan from an `AzkarItem`.
+- [ ] T053 [US6] Implement `Announcer` (`lib/session/announcer.dart`) — pure Dart: count announcement text + cue plan from an `AzkarItem` (FR-025).
 - [ ] T054 [US6] Add `announcing` to `SessionPhase` and the announce step to `SessionController` (ANNOUNCE→PLAY→STOP→LISTEN, gated by hands-free; mic still only opens in `listening`). Update `test/session/session_controller_test.dart` for the new phase ordering + INV-6.
-- [ ] T055 [P] [US6] Implement `CueService` (`lib/services/cue_service.dart`) using `SystemSound`/`HapticFeedback` — transition cue; spoken start/finish announcements via `TtsService` from the controller.
+- [ ] T055 [P] [US6] Implement `CueService` (`lib/services/cue_service.dart`) using `SystemSound`/`HapticFeedback` — transition cue; spoken start/finish announcements via `TtsService` from the controller (FR-026).
 - [ ] T056 [US6] Add `TtsService.hasArabicVoice()` (`lib/services/tts_service.dart`); when false, session runs text-only (skip announcements + reading) and shows a one-time Arabic notice (FR-028).
 - [ ] T057 [US6] Notification → immediate start: `NotificationService.init(onTapList)` + per-notification `payload(listId)`; `lib/main.dart` routes a reminder tap straight into that list's session (FR-027).
 - [ ] T058 [US6] Resume-replay: on `AppLifecycleState.resumed` with an active session, re-enter the current item at `announcing` (re-announce + re-read) instead of staying paused (FR-029).
@@ -156,8 +156,10 @@ complete a list without looking at the screen.
 ## Dependencies & Execution Order
 
 Setup → Foundational block all stories. US1 (MVP) → US2 (same screen). US3/US4/US5 independent of
-US1/US2 after Foundational; US5 settings feed US4 reschedule. Polish last.
-Story order: US1 → US2 → US3 → US4 → US5.
+US1/US2 after Foundational; US5 settings feed US4 reschedule. **US6 (driving) builds on the US1
+session engine + US5 settings** (it extends `SessionController`/`SessionScreen` and adds the
+hands-free toggle) and on US4 notifications (tap-to-start); do US6 after US1–US5. Polish last.
+Story order: US1 → US2 → US3 → US4 → US5 → US6.
 
 ## Parallel Opportunities
 
