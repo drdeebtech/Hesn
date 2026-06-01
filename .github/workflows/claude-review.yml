@@ -1,0 +1,41 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Claude review
+        uses: anthropics/claude-code-action@v1
+        with:
+          # Add ONE of these as a repo secret (Settings -> Secrets -> Actions):
+          #   ANTHROPIC_API_KEY   (Anthropic API key), or
+          #   CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`)
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this pull request for the Hesn azkar app. The project
+            constitution (.specify/memory/constitution.md) is binding. Flag, as
+            high priority, anything that violates these non-negotiable rules:
+            - PLAY -> STOP -> LISTEN: the mic must never open while TTS is
+              playing (lib/session/**).
+            - One advance per phrase: never advance more than once per phrase;
+              repeat counts are display-only.
+            - Privacy: no audio recording, no speech-to-text, no network calls
+              anywhere (lib/**, especially lib/services/vad_service.dart).
+            - Sacred text integrity: azkar text, tashkil, repeat counts, and
+              quran refs in assets/azkar.json must be verbatim and unaltered.
+            - Arabic RTL UI and plain setState (no state-management libraries).
+            Also do a normal review for bugs, correctness, and Flutter/Dart
+            best practices. Keep findings concise and actionable.
