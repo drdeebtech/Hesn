@@ -50,6 +50,16 @@ flutter test test/session/session_controller_test.dart   # the PLAY->STOP->LISTE
 6. Set a reminder a minute out → notification fires; reboot → it still fires (SC-006).
 7. Diff `assets/azkar.json` against the stakeholder source → byte-identical (SC-008).
 
+### Hands-free / driving mode (US6, FR-024–FR-030)
+
+1. Hands-free is **on by default** (Settings → "وضع القيادة"). In a session the app
+   **announces the count** ("ثلاث مرات") then reads the phrase, plays a cue between phrases, and
+   announces start/finish — complete a list **without looking at or touching the screen** (SC-009).
+2. Turn voice detection **off** → hands-free auto-disables (FR-030 invariant).
+3. Tap a delivered reminder → it opens **straight into that session** (SC-010 / FR-027).
+4. On a device with **no Arabic TTS voice**, a session runs text-only with a one-time notice
+   (FR-028); backgrounding then returning **replays the current phrase** (FR-029).
+
 ## Key files to read first
 
 - `specs/001-azkar-session/contracts/session-engine.md` — the core state machine + invariants.

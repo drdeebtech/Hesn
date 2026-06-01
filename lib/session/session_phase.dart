@@ -9,6 +9,10 @@ enum SessionPhase {
   /// No session running.
   idle,
 
+  /// [driving] Announcing the current phrase's repeat count (TTS). Mic closed.
+  /// A no-op pass-through when hands-free is off or the count is 1.
+  announcing,
+
   /// TTS is speaking the current phrase. Mic MUST be closed.
   playing,
 

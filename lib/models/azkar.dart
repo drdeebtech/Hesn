@@ -29,6 +29,7 @@ class AzkarItem {
     required this.repeat,
     required this.source,
     this.ref,
+    this.countPhrase,
   });
 
   final String id;
@@ -45,6 +46,10 @@ class AzkarItem {
 
   /// surah:ayah (e.g. "2:255" or "112:1-4"). Required iff [type] is quran.
   final String? ref;
+
+  /// Canonical Arabic count wording for the spoken announcement (e.g.
+  /// "ثلاث مرات"). Present when [repeat] > 1; null for a single recitation.
+  final String? countPhrase;
 
   bool get isQuran => type == AzkarType.quran;
 
@@ -70,6 +75,7 @@ class AzkarItem {
       repeat: repeat,
       source: source,
       ref: ref,
+      countPhrase: json['countPhrase'] as String?,
     );
   }
 }
