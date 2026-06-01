@@ -7,6 +7,11 @@ abstract class TtsService {
   Future<void> init();
   Future<void> speak(String text);
   Future<void> stop();
+
+  /// Whether an Arabic TTS voice is available. When false, the session runs
+  /// text-only and shows a one-time notice (FR-028).
+  Future<bool> hasArabicVoice();
+
   Future<void> dispose();
 }
 
@@ -39,6 +44,17 @@ class FlutterTtsService implements TtsService {
   @override
   Future<void> stop() async {
     await _tts.stop();
+  }
+
+  @override
+  Future<bool> hasArabicVoice() async {
+    try {
+      final available = await _tts.isLanguageAvailable('ar');
+      return available == true;
+    } catch (_) {
+      // Some platforms throw if no engine; treat as unavailable.
+      return false;
+    }
   }
 
   @override

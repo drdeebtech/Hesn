@@ -3,34 +3,45 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../models/azkar.dart';
+import '../services/cue_service.dart';
 import '../services/tts_service.dart';
 import '../services/vad_service.dart';
+import 'announcer.dart';
 import 'session_phase.dart';
 import 'vad_detector.dart';
 
-/// Drives one azkar list through the strict PLAY -> STOP -> LISTEN lifecycle.
+/// Drives one azkar list through the ANNOUNCE -> PLAY -> STOP -> LISTEN
+/// lifecycle.
 ///
-/// Pure-ish controller: depends only on [TtsService] and [VadService]
-/// abstractions (no widgets, no direct plugins) so the constitutional
-/// invariants (Principle II ordering, Principle IV single-advance) are
-/// unit-testable with fakes. Observers register via [addListener].
+/// Pure-ish controller: depends only on [TtsService]/[VadService]/[CueService]
+/// abstractions so the constitutional invariants (Principle II ordering,
+/// Principle IV single-advance) are unit-testable with fakes.
 class SessionController {
   SessionController({
     required TtsService tts,
     required VadService vad,
     required bool voiceEnabled,
     required double sensitivity,
+    bool handsFree = false,
+    CueService? cue,
+    Announcer announcer = const Announcer(),
     Duration stopGuard = const Duration(milliseconds: 250),
   })  : _tts = tts,
         _vad = vad,
         _voiceEnabled = voiceEnabled,
         _sensitivity = sensitivity,
+        _handsFree = handsFree,
+        _cue = cue,
+        _announcer = announcer,
         _stopGuard = stopGuard;
 
   final TtsService _tts;
   final VadService _vad;
   final bool _voiceEnabled;
   final double _sensitivity;
+  final bool _handsFree;
+  final CueService? _cue;
+  final Announcer _announcer;
   final Duration _stopGuard;
 
   final List<VoidCallback> _listeners = [];
@@ -41,6 +52,7 @@ class SessionController {
   SessionPhase _phase = SessionPhase.idle;
   bool _ttsSpeaking = false;
   bool _advanceInFlight = false;
+  bool _audioAvailable = true;
 
   StreamSubscription<double>? _vadSub;
   VadDetector? _detector;
@@ -54,6 +66,8 @@ class SessionController {
   int get total => _list.length;
   AzkarItem get currentItem => _list.items[_index];
   bool get isVoiceEnabled => _voiceEnabled;
+  bool get isHandsFree => _handsFree;
+  bool get audioAvailable => _audioAvailable;
   bool get safetyTimeoutElapsed => _safetyTimeoutElapsed;
   bool get ttsSpeaking => _ttsSpeaking;
 
@@ -65,22 +79,48 @@ class SessionController {
     }
   }
 
+  /// Speaks only when an audio voice is available (text-only fallback, FR-028).
+  Future<void> _speak(String text) async {
+    if (_audioAvailable) await _tts.speak(text);
+  }
+
   // ---- lifecycle ----
   Future<void> start(AzkarList list) async {
     _list = list;
     _index = 0;
     await _tts.init();
-    await _playCurrent();
+    _audioAvailable = await _tts.hasArabicVoice();
+    if (_handsFree && _audioAvailable) {
+      await _speak(_announcer.sessionStart(list));
+    }
+    await _announceAndPlay();
   }
 
-  Future<void> _playCurrent() async {
+  /// Re-enter the current item from the start (resume after interruption,
+  /// FR-029).
+  Future<void> replayCurrent() async {
+    if (_phase == SessionPhase.idle || _phase == SessionPhase.done) return;
+    await _announceAndPlay();
+  }
+
+  Future<void> _announceAndPlay() async {
     _cancelListening();
     _safetyTimeoutElapsed = false;
-    _phase = SessionPhase.playing;
-    _ttsSpeaking = true;
-    _notify();
 
-    await _tts.speak(currentItem.text); // resolves when playback finishes
+    // ANNOUNCE: speak the repeat count (hands-free only; mic stays closed).
+    _phase = SessionPhase.announcing;
+    _ttsSpeaking = _handsFree && _audioAvailable;
+    _notify();
+    if (_handsFree && _audioAvailable) {
+      final ann = _announcer.countAnnouncement(currentItem);
+      if (ann != null) await _speak(ann);
+    }
+
+    // PLAY: read the phrase.
+    _phase = SessionPhase.playing;
+    _ttsSpeaking = _audioAvailable;
+    _notify();
+    await _speak(currentItem.text);
     _ttsSpeaking = false;
 
     await _stopThenListen();
@@ -130,7 +170,6 @@ class SessionController {
     _safetyTimer = null;
     _detector = null;
     _sampleClock = null;
-    // Only touch the mic if we had actually started listening.
     if (wasListening) _vad.stop();
   }
 
@@ -147,11 +186,15 @@ class SessionController {
     if (_index + 1 < _list.length) {
       _index += 1;
       _advanceInFlight = false;
-      _playCurrent();
+      if (_handsFree) _cue?.transition(); // non-spoken transition cue
+      _announceAndPlay();
     } else {
       _phase = SessionPhase.done;
       _advanceInFlight = false;
       _notify();
+      if (_handsFree && _audioAvailable) {
+        _speak(_announcer.sessionComplete(_list));
+      }
       onListComplete?.call(_list.id);
     }
   }

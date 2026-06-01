@@ -84,6 +84,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (v) =>
                       _save(_settings.copyWith(voiceDetectionEnabled: v)),
                 ),
+                SwitchListTile(
+                  title: const Text('وضع القيادة (بدون لمس)'),
+                  subtitle: const Text(
+                      'ينطق العدد ويقرأ الذكر وينتقل تلقائياً — يتطلّب الكشف الصوتي'),
+                  value: _settings.handsFreeMode,
+                  onChanged: (v) =>
+                      _save(_settings.copyWith(handsFreeMode: v)),
+                ),
                 ListTile(
                   title: const Text('حساسية الكشف'),
                   subtitle: Slider(

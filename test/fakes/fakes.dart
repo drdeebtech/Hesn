@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:hesn/models/app_settings.dart';
 import 'package:hesn/models/daily_progress.dart';
 import 'package:hesn/services/storage_service.dart';
+import 'package:hesn/services/cue_service.dart';
 import 'package:hesn/services/permission_service.dart';
 import 'package:hesn/services/tts_service.dart';
 import 'package:hesn/services/vad_service.dart';
@@ -14,9 +15,13 @@ class CallLog {
 }
 
 class FakeTtsService implements TtsService {
-  FakeTtsService(this.log);
+  FakeTtsService(this.log, {this.arabicVoice = true});
   final CallLog log;
+  bool arabicVoice;
   bool speaking = false;
+
+  /// Every utterance passed to [speak], in order (for assertions).
+  final List<String> spoken = [];
 
   @override
   Future<void> init() async {}
@@ -25,6 +30,7 @@ class FakeTtsService implements TtsService {
   Future<void> speak(String text) async {
     speaking = true;
     log.add('speak');
+    spoken.add(text);
     // Simulate playback that completes before returning.
     speaking = false;
   }
@@ -36,7 +42,17 @@ class FakeTtsService implements TtsService {
   }
 
   @override
+  Future<bool> hasArabicVoice() async => arabicVoice;
+
+  @override
   Future<void> dispose() async {}
+}
+
+class FakeCueService implements CueService {
+  FakeCueService(this.log);
+  final CallLog log;
+  @override
+  Future<void> transition() async => log.add('cue');
 }
 
 class FakeVadService implements VadService {

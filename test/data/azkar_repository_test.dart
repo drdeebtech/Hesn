@@ -38,6 +38,19 @@ void main() {
       }
     });
 
+    test('every multi-repeat item carries a countPhrase (FR-025)', () {
+      final lists = AzkarRepository.parse(raw);
+      for (final l in lists) {
+        for (final it in l.items) {
+          if (it.repeat > 1) {
+            expect(it.countPhrase, isNotNull,
+                reason: '${it.id} (repeat ${it.repeat}) missing countPhrase');
+            expect(it.countPhrase!.trim().isNotEmpty, isTrue);
+          }
+        }
+      }
+    });
+
     test('parsing does not trim/normalize text (byte-stable round-trip)', () {
       // The parsed text must equal exactly what is in the JSON value.
       final decoded = jsonDecode(raw) as List<dynamic>;
