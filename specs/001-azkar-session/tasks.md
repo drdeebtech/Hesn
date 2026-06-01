@@ -31,7 +31,7 @@ flutter/dart command.
 - [ ] T008 [P] Implement `AzkarItem` and `AzkarList` models in `lib/models/azkar.dart` (immutable, `fromJson`, validation: `repeat>=1`, `quran ⇒ ref`).
 - [ ] T009 [P] Implement `AppSettings` model in `lib/models/app_settings.dart` (`fromJson`/`toJson`, defaults from data-model.md).
 - [ ] T010 [P] Implement `DailyProgress` model in `lib/models/daily_progress.dart` with the date-rollover rule (stale `dateKey` ⇒ fresh record).
-- [ ] T011 [US-data] Create `assets/azkar.json` from the stakeholder-provided Hisn al-Muslim text — morning + evening, fully voweled, **verbatim**, with `type:"quran"` + `ref` on Ayat al-Kursi (2:255) and al-Ikhlas/al-Falaq/al-Nas; repeat counts exactly as given.
+- [ ] T011 Create `assets/azkar.json` from the committed source `specs/001-azkar-session/source/azkar-source.txt` — morning + evening, fully voweled, **verbatim**, with `type:"quran"` + `ref` on Ayat al-Kursi (2:255) and al-Ikhlas/al-Falaq/al-Nas; repeat counts exactly as given.
 - [ ] T012 Validate `assets/azkar.json` against `specs/001-azkar-session/contracts/azkar.schema.json` (schema-check script or test); fix structural issues only — never edit the sacred text to satisfy the schema.
 - [ ] T013 [P] Define service interfaces in `lib/services/` per contracts/services.md: `TtsService`, `VadService`, `StorageService`, `NotificationService`, `PermissionService` (abstract classes only).
 - [ ] T014 [P] Implement `AzkarRepository` in `lib/data/azkar_repository.dart` to load+parse `assets/azkar.json` read-only.
@@ -123,6 +123,8 @@ flutter/dart command.
 - [ ] T043 [P] Tune timing defaults (silence window, min-speech, sensitivity mapping) on a real Android device; record final values in `contracts/session-engine.md`.
 - [ ] T044 Final gates: `flutter analyze` clean and `flutter test` green; build a debug APK.
 - [ ] T045 Pre-release: have a competent Arabic speaker review `assets/azkar.json` against the source (constitution Principle I) and record sign-off.
+- [ ] T046 [P] [TEST] No-network guard (Principle III): `test/privacy/no_network_test.dart` (or a CI grep) that fails if any network dependency (`http`, `dio`, `web_socket`, `socket`) appears in `pubspec.yaml` or if `dart:io` socket/HTTP APIs are imported in `lib/`. Addresses analysis finding F1 / FR-021.
+- [ ] T047 [P] [TEST] Sacred-text integrity (Principle I, SC-008): `test/data/azkar_source_diff_test.dart` extracts each azkar `text` from `assets/azkar.json`, strips only the dhikr delimiters/count annotations defined by the build rule, and asserts the recited text matches the corresponding passage in `specs/001-azkar-session/source/azkar-source.txt` character-for-character. Addresses analysis finding F2.
 
 ---
 
