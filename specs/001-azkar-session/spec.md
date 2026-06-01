@@ -21,6 +21,7 @@
 - Q: Is the audio-first behavior always-on or a toggle? → A: A "hands-free / driving mode" setting, default ON, gates the spoken count, transition cues, and start-from-reminder; users may turn it off.
 - Q: How is the spoken repeat count phrased? → A: Use the source's canonical Arabic count wording (e.g. "ثلاث مرات", "سبع مرات", "مائة مرة"), stored per item, not a generated numeral.
 - Q: What does tapping a reminder notification do? → A: It starts that session immediately (opens straight into the running session for that list).
+- Q: How does hands-free mode relate to voice detection? → A: Hands-free implies voice detection ON — enabling hands-free enables voice detection; turning voice detection off also turns hands-free off.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -242,6 +243,9 @@ and take effect.
   keep the session usable, and show a one-time notice.
 - **FR-029**: After an interruption (call/background), on return the app MUST keep the user's place
   and replay the current phrase from the start.
+- **FR-030**: Hands-free mode MUST require voice detection: enabling hands-free MUST enable voice
+  detection, and disabling voice detection MUST disable hands-free (so "hands-free" always implies
+  automatic advance).
 
 ### Key Entities *(include if feature involves data)*
 
