@@ -23,6 +23,7 @@
             "type": { "type": "string", "enum": ["dhikr", "quran"] },
             "text": { "type": "string", "minLength": 1 },
             "repeat": { "type": "integer", "minimum": 1 },
+            "countPhrase": { "type": "string", "minLength": 1 },
             "source": { "type": "string", "minLength": 1 },
             "ref": { "type": "string", "pattern": "^[0-9]+:[0-9]+(-[0-9]+)?$" }
           },
