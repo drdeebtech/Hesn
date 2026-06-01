@@ -11,7 +11,9 @@ progress/settings are small JSON blobs in `shared_preferences`.
 
 ### SessionPhase
 Linear state machine (see contracts/session-engine.md):
-`idle → playing → stopping → listening → advancing → (playing | done)`
+`idle → announcing → playing → stopping → listening → advancing → (announcing | done)`
+- `announcing` (driving mode): speaks the repeat count (if `repeat > 1`) before the phrase is read.
+  For `repeat == 1` it is a no-op pass-through. The mic stays closed.
 - The mic may only be live in `listening`. Transition into `listening` requires a completed
   `stopping`. This ordering encodes Constitution Principle II.
 

@@ -16,6 +16,17 @@ locally via `shared_preferences` with automatic date-rollover reset, and two dai
 notifications are scheduled and re-established after reboot. No backend, network, login, or
 state-management library; plain `setState`.
 
+**Driving mode (primary experience, FR-024–FR-029):** the session is fully audio-driven and
+eyes-free. Before reading a phrase the engine **announces its repeat count** via TTS (e.g.
+"ثلاث مرات") then reads the phrase once; the user recites it the stated number of times and pauses
+to advance (Principle IV unchanged — the app never auto-counts repeats). The engine emits **spoken
+cues** for session start and completion and a short **non-spoken transition cue** between phrases.
+The user can begin the time-appropriate list with a **single action from the reminder notification**
+(or auto-start), avoiding on-screen navigation. If **no Arabic TTS voice** is available the app
+falls back to text-only with a one-time notice. After an interruption the engine **replays the
+current phrase** on return. Audio cues use built-in platform facilities (`SystemSound` /
+`HapticFeedback`) and TTS only — **no new audio dependency** (Principle VI).
+
 ## Technical Context
 
 **Language/Version**: Dart 3.x / Flutter 3.44 (stable)
@@ -42,7 +53,14 @@ cold start under ~2 s on mid-range Android.
 LISTEN never overlap; azkar text/counts byte-identical to source.
 
 **Scale/Scope**: 2 azkar lists (~25 items each), 3 screens (Home, Session, Settings), 1 session
-engine, 4 service abstractions. Single user, single device, no accounts.
+engine, 5 service abstractions. Single user, single device, no accounts.
+
+**Driving-mode additions**: a thin `Announcer` (pure Dart: builds the Arabic count phrase + cue
+plan from an item) feeding the existing `TtsService`; an extended phrase lifecycle
+`announcing → playing → stopping → listening`; `TtsService` gains voice-availability detection for
+the text-only fallback; notification tap → deep-link/auto-start of the time-appropriate list; resume
+re-enters the current item from `announcing`. No new dependencies; cues via `SystemSound`/
+`HapticFeedback`.
 
 ## Constitution Check
 
@@ -58,7 +76,21 @@ engine, 4 service abstractions. Single user, single device, no accounts.
 | VI | Radical Simplicity | Only the locked deps. Plain `setState` in screens; engine is a plain `ChangeNotifier`-free controller exposing callbacks/streams. Forbidden: `speech_to_text`, normalization, similarity, prayer-time calc. |
 | VII | Manual Fallback Always Available | `DoneButton`/`SkipButton` always built in `SessionScreen`; safety-timeout timer (8–10s) raises a flag that emphasizes Done. Works with voice disabled. |
 
-**Result**: PASS. No violations; Complexity Tracking not required.
+**Driving-mode compliance (FR-024–FR-029):**
+
+- **IV (unchanged):** the app announces the count and reads the phrase once; the user still recites
+  N times and the engine does **one** advance per phrase. No speech-burst counting (that would
+  violate IV and was rejected). The inter-repetition pause is handled by tuning the silence window,
+  not by counting.
+- **III:** announcements/cues are local TTS + `SystemSound`/`HapticFeedback`; still no network, no
+  recording, no STT. The text-only fallback is a local capability check.
+- **V:** all spoken announcements ("ثلاث مرات", start/finish) are Arabic literals.
+- **VI:** **no new dependency** — cues reuse built-in platform facilities; `Announcer` is pure Dart.
+- **II:** the new `announcing` phase precedes `playing`; the mic still only opens in `listening`
+  after `stopping`. The PLAY→STOP→LISTEN invariant and its test are unchanged.
+- **VII:** Done/Skip remain present; eyes-free is additive, not a removal of the manual path.
+
+**Result**: PASS. Driving mode adds no violations; Complexity Tracking not required.
 
 ## Project Structure
 
@@ -90,14 +122,16 @@ lib/
 ├── data/
 │   └── azkar_repository.dart      # Loads & parses assets/azkar.json (read-only)
 ├── services/
-│   ├── tts_service.dart           # abstract + flutter_tts impl  (speak, stop, awaitCompletion)
+│   ├── tts_service.dart           # abstract + flutter_tts impl (speak, stop, awaitCompletion, hasArabicVoice)
 │   ├── vad_service.dart           # abstract + record impl  (amplitude stream, start/stop)
-│   ├── notification_service.dart  # abstract + flutter_local_notifications impl
+│   ├── notification_service.dart  # abstract + flutter_local_notifications impl (tap → start list)
+│   ├── cue_service.dart           # [driving] abstract + SystemSound/HapticFeedback impl (transition cue)
 │   ├── storage_service.dart       # abstract + shared_preferences impl
 │   └── permission_service.dart    # mic permission request/status
 ├── session/
-│   ├── session_phase.dart         # enum: idle, playing, stopping, listening, advancing, done
-│   ├── session_controller.dart    # PLAY->STOP->LISTEN state machine (no UI, no plugins direct)
+│   ├── session_phase.dart         # enum: idle, announcing, playing, stopping, listening, advancing, done
+│   ├── session_controller.dart    # ANNOUNCE->PLAY->STOP->LISTEN state machine (no UI, no plugins direct)
+│   ├── announcer.dart             # [driving] pure Dart: Arabic count phrase + cue plan per item
 │   └── vad_detector.dart          # speech/silence logic (min-speech, silence-window, timeout)
 ├── screens/
 │   ├── home_screen.dart           # pick morning/evening, today's status, settings entry
@@ -115,7 +149,8 @@ assets/
 
 test/
 ├── session/
-│   ├── session_controller_test.dart   # PLAY->STOP->LISTEN ordering; one-advance-per-phrase
+│   ├── session_controller_test.dart   # ANNOUNCE->PLAY->STOP->LISTEN ordering; one-advance-per-phrase
+│   ├── announcer_test.dart            # [driving] count phrase ("ثلاث مرات"); omit for count==1
 │   └── vad_detector_test.dart         # min-speech, silence-window, safety-timeout
 ├── data/
 │   └── azkar_repository_test.dart      # asset parses; quran items immutable & have ref

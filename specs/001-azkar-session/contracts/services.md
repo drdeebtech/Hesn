@@ -10,11 +10,23 @@ abstract class TtsService {
   Future<void> init();                 // set language ar, rate, awaitSpeakCompletion(true)
   Future<void> speak(String text);     // completes when the utterance FINISHES playing
   Future<void> stop();                 // fully stops playback; completes when stopped
+  Future<bool> hasArabicVoice();       // [driving] capability check for text-only fallback (FR-028)
   Future<void> dispose();
 }
 ```
 - Contract: `speak()` MUST NOT complete until audio playback has finished (or is stopped). This is
   what lets the engine guarantee Principle II.
+- `hasArabicVoice()`: queries available languages (no network); when false the engine skips audio
+  (announcements + reading) and the UI shows a one-time notice.
+
+## CueService  (impl: built-in `SystemSound` / `HapticFeedback` — no new dependency)
+
+```dart
+abstract class CueService {
+  Future<void> transition();           // [driving] short non-spoken cue between phrases
+}
+```
+- Contract: uses only platform built-ins; no asset files, no audio dependency (Principle VI).
 
 ## VadService  (impl: `record`, amplitude mode)
 
@@ -46,7 +58,7 @@ abstract class StorageService {
 
 ```dart
 abstract class NotificationService {
-  Future<void> init();                                   // tz init, channel setup
+  Future<void> init({void Function(String listId)? onTapList}); // tz init, channel, tap handler
   Future<void> scheduleDaily(AppSettings s);             // morning + evening, daily repeat
   Future<void> cancelAll();
   Future<void> rescheduleFromSettings(AppSettings s);    // idempotent; called on launch + on reboot
@@ -54,6 +66,8 @@ abstract class NotificationService {
 ```
 - Contract: uses `zonedSchedule` with a daily time component; Android declares
   `RECEIVE_BOOT_COMPLETED` so reminders survive reboot; reconciled on app launch.
+- [driving] Each scheduled notification carries a `payload` of its `listId`; tapping it invokes
+  `onTapList(listId)` so the app routes straight into that session (FR-027) — no on-screen nav.
 
 ## PermissionService  (impl: `permission_handler`)
 
