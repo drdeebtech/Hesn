@@ -1,0 +1,14 @@
+# Code owners for Hesn — auto-requests review on matching paths.
+# (Branch protection currently has require_code_owner_reviews=false, so these
+#  requests are advisory until you flip to the strict profile.)
+
+# Default owner for everything in the repo
+*                                       @drdeebtech
+
+# Constitution-critical areas — always loop in the owner
+/.specify/memory/constitution.md        @drdeebtech
+/assets/azkar.json                      @drdeebtech
+/specs/001-azkar-session/source/        @drdeebtech
+/lib/session/                           @drdeebtech
+/lib/services/vad_service.dart          @drdeebtech
+/.github/                               @drdeebtech
