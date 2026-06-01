@@ -50,6 +50,12 @@ flutter build apk --debug               # build Android APK (no device/emulator 
 This environment has `.claude-flow/` (claude-flow orchestration) configured. The user's global instructions describe swarm/agent workflows; the project `CLAUDE.md` referenced there lives at `/home/drdeeb/CLAUDE.md`, not in this repo.
 
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+Active feature: **001-azkar-session**. For technologies, project structure, the
+PLAY→STOP→LISTEN session-engine design, the azkar JSON schema, and quality gates,
+read the implementation plan and its design artifacts:
+- `specs/001-azkar-session/plan.md` (stack, structure, Constitution Check)
+- `specs/001-azkar-session/research.md` (technical decisions)
+- `specs/001-azkar-session/data-model.md` (entities)
+- `specs/001-azkar-session/contracts/` (session-engine, services, azkar.schema.json)
+- `specs/001-azkar-session/quickstart.md` (build/run/test commands)
 <!-- SPECKIT END -->
