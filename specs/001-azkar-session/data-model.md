@@ -69,7 +69,7 @@ User preferences. Persisted as JSON in `shared_preferences` under key `app_setti
 | `eveningReminderTime`   | String | `16:30`  | `HH:mm` 24h local. |
 | `voiceDetectionEnabled` | bool   | `true`   | When false, sessions run manual-only. |
 | `sensitivity`           | double | `0.5`    | 0..1; maps to VAD amplitude threshold. |
-| `handsFreeMode`         | bool   | `true`   | Hands-free/driving mode: when on, spoken count + cues + start-from-reminder are active. |
+| `handsFreeMode`         | bool   | `true`   | Hands-free/driving mode: when on, spoken count + cues + start-from-reminder are active. **Invariant:** `handsFreeMode ⇒ voiceDetectionEnabled`; setting `voiceDetectionEnabled=false` forces `handsFreeMode=false` (FR-030). |
 
 ## Relationships
 
