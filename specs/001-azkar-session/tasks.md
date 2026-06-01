@@ -2,9 +2,12 @@
 
 **Feature**: `001-azkar-session` | **Plan**: [plan.md](./plan.md) | **Spec**: [spec.md](./spec.md)
 
-**Status**: regenerated from design artifacts; completion re-applied.
-**Progress**: 45 / 47 complete. Open: **T043** (on-device VAD tuning), **T045** (Arabic-speaker
-review) — both require external resources (a physical device / a human reviewer).
+**Status**: regenerated from design artifacts; completion re-applied. Phase 9 (driving mode) added.
+**Progress**: 45 / 62 complete.
+- Core feature (T001–T047): 45 done; open **T043** (on-device VAD tuning), **T045** (Arabic-speaker
+  review) — both need external resources.
+- **Phase 9 / US6 hands-free driving mode (T048–T062): not yet implemented** — this is the next
+  `/speckit-implement` target.
 
 Tests for the two NON-NEGOTIABLE behaviors are **required** by the constitution:
 PLAY→STOP→LISTEN ordering (Principle II) and one-advance-per-phrase (Principle IV). Other tests are
@@ -118,6 +121,38 @@ flutter/dart command.
 
 ---
 
+## Phase 9: User Story 6 — Hands-free / Driving Mode (P1) 🚗
+
+**Goal**: Eyes-free, no-touch use while driving (FR-024–FR-030): app speaks the count, reads the
+phrase, cues transitions, announces start/finish, advances by voice, and can start from the
+reminder — all without looking at or touching the screen. Lifecycle adds an `announcing` phase
+(ANNOUNCE→PLAY→STOP→LISTEN). **Not yet implemented.**
+
+**Independent test**: With fakes, a hands-free session announces the count phrase then reads the
+phrase, opens the mic only after stop, and advances once on voice-complete — no taps; on a device,
+complete a list without looking at the screen.
+
+- [ ] T048 [US6] Add `handsFreeMode` (default true) to `AppSettings` (`lib/models/app_settings.dart`) with the FR-030 invariant helper: enabling hands-free implies `voiceDetectionEnabled=true`; disabling voice forces `handsFreeMode=false`.
+- [ ] T049 [P] [US6] [TEST] `test/models/app_settings_test.dart`: FR-030 invariant (hands-free⇒voice-on; voice-off⇒hands-free-off) + JSON round-trip incl. `handsFreeMode`.
+- [ ] T050 [US6] Add `countPhrase` to each multi-repeat item in `assets/azkar.json` using the source's canonical Arabic wording (3→ثلاث مرات, 4→أربع مرات, 7→سبع مرات, 10→عشر مرات, 100→مائة مرة); update `source/azkar-source.txt` coverage so T047 still passes.
+- [ ] T051 [US6] Add `countPhrase` (`String?`) to `AzkarItem.fromJson`/model (`lib/models/azkar.dart`); extend `test/data/azkar_repository_test.dart` to assert multi-repeat items carry a `countPhrase`.
+- [ ] T052 [P] [US6] [TEST] `test/session/announcer_test.dart`: `Announcer` returns the item's `countPhrase` for repeat>1 and null for repeat==1.
+- [ ] T053 [US6] Implement `Announcer` (`lib/session/announcer.dart`) — pure Dart: count announcement text + cue plan from an `AzkarItem`.
+- [ ] T054 [US6] Add `announcing` to `SessionPhase` and the announce step to `SessionController` (ANNOUNCE→PLAY→STOP→LISTEN, gated by hands-free; mic still only opens in `listening`). Update `test/session/session_controller_test.dart` for the new phase ordering + INV-6.
+- [ ] T055 [P] [US6] Implement `CueService` (`lib/services/cue_service.dart`) using `SystemSound`/`HapticFeedback` — transition cue; spoken start/finish announcements via `TtsService` from the controller.
+- [ ] T056 [US6] Add `TtsService.hasArabicVoice()` (`lib/services/tts_service.dart`); when false, session runs text-only (skip announcements + reading) and shows a one-time Arabic notice (FR-028).
+- [ ] T057 [US6] Notification → immediate start: `NotificationService.init(onTapList)` + per-notification `payload(listId)`; `lib/main.dart` routes a reminder tap straight into that list's session (FR-027).
+- [ ] T058 [US6] Resume-replay: on `AppLifecycleState.resumed` with an active session, re-enter the current item at `announcing` (re-announce + re-read) instead of staying paused (FR-029).
+- [ ] T059 [US6] `SettingsScreen` hands-free toggle (default on) wired to the FR-030 invariant against the voice toggle; persist via `StorageService`.
+- [ ] T060 [US6] Eyes-free wiring in `SessionScreen`: announce count → read → cue on transition → spoken session start/finish; keep a glanceable large RTL layout; ensure a full list completes with zero taps.
+- [ ] T061 [P] [US6] [TEST] `test/widget/hands_free_session_test.dart`: with FakeTts capturing utterances, a hands-free session announces the count phrase before the phrase, advances on voice-complete with no taps, and the FR-030 toggle interaction holds.
+- [ ] T062 Update `quickstart.md` with driving-mode verification steps; re-run `flutter analyze` + `flutter test`; rebuild debug APK.
+
+**Checkpoint**: a list completes hands-free (announce → recite → auto-advance) with no taps; the
+`announcing` phase preserves PLAY→STOP→LISTEN; FR-030 invariant enforced.
+
+---
+
 ## Dependencies & Execution Order
 
 Setup → Foundational block all stories. US1 (MVP) → US2 (same screen). US3/US4/US5 independent of
@@ -135,15 +170,21 @@ Setup T003–T006; Foundational T007–T010/T013–T017; US1 T019/T020/T026; tes
 - US3: completion shown on Home; resets on date change.
 - US4: reminder fires at set time and after reboot.
 - US5: settings persist across restart and change behavior.
+- US6 (driving): a list completes with zero taps — count announced, phrase read, mic only after stop,
+  auto-advance on voice-complete; reminder tap starts the session; FR-030 toggle invariant holds.
 
 ## MVP
 
 Phases 1 + 2 + 3 (US1) — hands-free session with the PLAY→STOP→LISTEN guarantee; add US2
 immediately for the constitution-required manual fallback. **Delivered.**
 
-## Remaining Work (2 tasks, both external)
+## Remaining Work
+
+**Hands-free / driving mode (T048–T062)** — buildable now; the next `/speckit-implement` target.
+
+**External gates (cannot be done in this environment):**
 
 | Task | Blocker | Needed to |
 |------|---------|-----------|
-| T043 | physical Android device | tune VAD silence/min-speech/sensitivity to real-world feel |
-| T045 | competent Arabic speaker | sign off azkar text/counts before public release |
+| T043 | physical Android device | tune VAD silence/min-speech/sensitivity (incl. inter-repetition gap for hands-free) |
+| T045 | competent Arabic speaker | sign off azkar text/counts (incl. evening variants + count phrases) before public release |
