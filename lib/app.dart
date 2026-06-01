@@ -20,6 +20,7 @@ class HesnApp extends StatelessWidget {
     required this.tts,
     required this.vad,
     required this.permissions,
+    this.navigatorKey,
   });
 
   final AzkarRepository repository;
@@ -28,11 +29,13 @@ class HesnApp extends StatelessWidget {
   final TtsService tts;
   final VadService vad;
   final PermissionService permissions;
+  final GlobalKey<NavigatorState>? navigatorKey;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'حصن',
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       locale: const Locale('ar'),

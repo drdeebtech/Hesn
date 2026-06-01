@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/app_settings.dart';
 import '../models/azkar.dart';
 import '../models/daily_progress.dart';
+import '../services/cue_service.dart';
 import '../services/permission_service.dart';
 import '../services/storage_service.dart';
 import '../services/tts_service.dart';
@@ -21,6 +22,7 @@ class SessionScreen extends StatefulWidget {
     required this.vad,
     required this.permissions,
     required this.storage,
+    this.cue = const PlatformCueService(),
     this.stopGuard = const Duration(milliseconds: 250),
   });
 
@@ -30,6 +32,7 @@ class SessionScreen extends StatefulWidget {
   final VadService vad;
   final PermissionService permissions;
   final StorageService storage;
+  final CueService cue;
 
   /// Delay between stopping playback and opening the mic; 0 in tests.
   final Duration stopGuard;
@@ -52,6 +55,8 @@ class _SessionScreenState extends State<SessionScreen>
       vad: widget.vad,
       voiceEnabled: widget.settings.voiceDetectionEnabled,
       sensitivity: widget.settings.sensitivity,
+      handsFree: widget.settings.handsFreeMode,
+      cue: widget.cue,
       stopGuard: widget.stopGuard,
     )
       ..addListener(_onChange)
@@ -67,6 +72,13 @@ class _SessionScreenState extends State<SessionScreen>
       if (ok) await widget.permissions.requestMic();
     }
     await _controller.start(widget.list);
+    // One-time text-only notice when no Arabic TTS voice is available (FR-028).
+    if (mounted && !_controller.audioAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('لا يتوفر صوت عربي على الجهاز — سيظهر النص بدون قراءة صوتية.'),
+        duration: Duration(seconds: 5),
+      ));
+    }
   }
 
   Future<bool> _showMicRationale() async {
@@ -105,9 +117,12 @@ class _SessionScreenState extends State<SessionScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Stop TTS + mic when leaving the foreground (Principle III / INV-5).
     if (state != AppLifecycleState.resumed) {
+      // Stop TTS + mic when leaving the foreground (Principle III / INV-5).
       _controller.pause();
+    } else if (!_completed) {
+      // On return, replay the current phrase from the start (FR-029).
+      _controller.replayCurrent();
     }
   }
 

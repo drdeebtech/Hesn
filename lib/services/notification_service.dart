@@ -7,9 +7,12 @@ import '../models/app_settings.dart';
 
 /// Two daily local reminders (morning + evening). No network/push.
 abstract class NotificationService {
-  Future<void> init();
+  Future<void> init({void Function(String listId)? onTapList});
   Future<void> rescheduleFromSettings(AppSettings settings);
   Future<void> cancelAll();
+
+  /// The listId from a notification that launched the app (cold start), if any.
+  Future<String?> launchListId();
 }
 
 class LocalNotificationService implements NotificationService {
@@ -18,13 +21,15 @@ class LocalNotificationService implements NotificationService {
 
   final FlutterLocalNotificationsPlugin _plugin;
   bool _inited = false;
+  void Function(String listId)? _onTapList;
 
   static const _morningId = 1001;
   static const _eveningId = 1002;
   static const _channelId = 'azkar_reminders';
 
   @override
-  Future<void> init() async {
+  Future<void> init({void Function(String listId)? onTapList}) async {
+    _onTapList = onTapList;
     if (_inited) return;
     tzdata.initializeTimeZones();
     final localName = await FlutterTimezone.getLocalTimezone();
@@ -34,8 +39,21 @@ class LocalNotificationService implements NotificationService {
     const darwin = DarwinInitializationSettings();
     await _plugin.initialize(
       const InitializationSettings(android: android, iOS: darwin),
+      onDidReceiveNotificationResponse: (resp) {
+        final id = resp.payload;
+        if (id != null && id.isNotEmpty) _onTapList?.call(id);
+      },
     );
     _inited = true;
+  }
+
+  @override
+  Future<String?> launchListId() async {
+    final details = await _plugin.getNotificationAppLaunchDetails();
+    if (details?.didNotificationLaunchApp ?? false) {
+      return details?.notificationResponse?.payload;
+    }
+    return null;
   }
 
   @override
@@ -47,12 +65,14 @@ class LocalNotificationService implements NotificationService {
       hhmm: settings.morningReminderTime,
       title: 'أذكار الصباح',
       body: 'حان وقت أذكار الصباح',
+      payload: 'morning',
     );
     await _scheduleDaily(
       id: _eveningId,
       hhmm: settings.eveningReminderTime,
       title: 'أذكار المساء',
       body: 'حان وقت أذكار المساء',
+      payload: 'evening',
     );
   }
 
@@ -64,6 +84,7 @@ class LocalNotificationService implements NotificationService {
     required String hhmm,
     required String title,
     required String body,
+    required String payload,
   }) async {
     final (hour, minute) = AppSettings.parseTime(hhmm);
     const details = NotificationDetails(
@@ -86,6 +107,7 @@ class LocalNotificationService implements NotificationService {
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time, // repeat daily
+      payload: payload,
     );
   }
 

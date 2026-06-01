@@ -32,7 +32,8 @@ void main() {
     final log = CallLog();
     await tester.pumpWidget(_wrap(SessionScreen(
       list: _list(2),
-      settings: const AppSettings(voiceDetectionEnabled: false),
+      settings: const AppSettings(
+          voiceDetectionEnabled: false, handsFreeMode: false),
       tts: FakeTtsService(log),
       vad: FakeVadService(log),
       permissions: FakePermissionService(),
@@ -50,7 +51,8 @@ void main() {
     final log = CallLog();
     await tester.pumpWidget(_wrap(SessionScreen(
       list: _list(2),
-      settings: const AppSettings(voiceDetectionEnabled: false),
+      settings: const AppSettings(
+          voiceDetectionEnabled: false, handsFreeMode: false),
       tts: FakeTtsService(log),
       vad: FakeVadService(log),
       permissions: FakePermissionService(),
