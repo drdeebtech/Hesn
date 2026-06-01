@@ -192,11 +192,17 @@ class SessionController {
       _phase = SessionPhase.done;
       _advanceInFlight = false;
       _notify();
-      if (_handsFree && _audioAvailable) {
-        _speak(_announcer.sessionComplete(_list));
-      }
-      onListComplete?.call(_list.id);
+      _finishSession();
     }
+  }
+
+  /// Speaks the completion cue (hands-free) and THEN notifies completion, so an
+  /// eyes-free user hears "اكتملت …" before the screen navigates away.
+  Future<void> _finishSession() async {
+    if (_handsFree && _audioAvailable) {
+      await _speak(_announcer.sessionComplete(_list));
+    }
+    onListComplete?.call(_list.id);
   }
 
   /// Skip the current phrase (same single-step movement as [advance]).

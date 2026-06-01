@@ -145,7 +145,7 @@ complete a list without looking at the screen.
 - [x] T058 [US6] Resume-replay: on `AppLifecycleState.resumed` with an active session, re-enter the current item at `announcing` (re-announce + re-read) instead of staying paused (FR-029).
 - [x] T059 [US6] `SettingsScreen` hands-free toggle (default on) wired to the FR-030 invariant against the voice toggle; persist via `StorageService`.
 - [x] T060 [US6] Eyes-free wiring in `SessionScreen`: announce count → read → cue on transition → spoken session start/finish; keep a glanceable large RTL layout; ensure a full list completes with zero taps.
-- [x] T061 [P] [US6] [TEST] `test/widget/hands_free_session_test.dart`: with FakeTts capturing utterances, a hands-free session announces the count phrase before the phrase, advances on voice-complete with no taps, and the FR-030 toggle interaction holds.
+- [x] T061 [P] [US6] [TEST] `test/session/hands_free_session_test.dart`: with FakeTts capturing utterances, a hands-free session announces the count phrase before the phrase, advances on voice-complete with no taps, and the text-only fallback holds; the FR-030 toggle invariant is covered by `test/models/app_settings_test.dart`.
 - [x] T062 Update `quickstart.md` with driving-mode verification steps; re-run `flutter analyze` + `flutter test`; rebuild debug APK.
 
 **Checkpoint**: a list completes hands-free (announce → recite → auto-advance) with no taps; the

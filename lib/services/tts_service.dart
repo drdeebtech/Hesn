@@ -49,10 +49,11 @@ class FlutterTtsService implements TtsService {
   @override
   Future<bool> hasArabicVoice() async {
     try {
-      final available = await _tts.isLanguageAvailable('ar');
+      // flutter_tts returns a dynamic (bool on Android/iOS) — coerce safely.
+      final dynamic available = await _tts.isLanguageAvailable('ar');
       return available == true;
     } catch (_) {
-      // Some platforms throw if no engine; treat as unavailable.
+      // Some platforms throw if no engine is installed; treat as unavailable.
       return false;
     }
   }
