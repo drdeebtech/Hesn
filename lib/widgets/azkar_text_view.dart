@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../models/azkar.dart';
+import '../theme/app_theme.dart';
 
-/// Renders a fully-voweled azkar phrase: large, scrollable, RTL. Qur'anic items
-/// are visually distinguished but never altered.
+/// Renders a fully-voweled azkar phrase as the Session hero: large Amiri Naskh,
+/// centered, RTL, never truncated (auto-fits down to a legible floor, then
+/// scrolls). Qur'anic items use the lighter Quran style with a gold ref label.
 class AzkarTextView extends StatelessWidget {
   const AzkarTextView({super.key, required this.item});
 
@@ -11,34 +13,54 @@ class AzkarTextView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isQuran = item.isQuran;
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (isQuran)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                item.ref ?? '',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
+    final style = (isQuran ? AppTheme.azkarQuran : AppTheme.azkarDisplay)
+        .copyWith(color: cs.onSurface);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final text = Text(
+          item.text,
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.rtl,
+          style: style,
+        );
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (isQuran && item.ref != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      '﴿ ${item.ref} ﴾',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: cs.secondary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .5,
+                      ),
                     ),
-              ),
-            ),
-          Text(
-            item.text,
-            textAlign: TextAlign.center,
-            textDirection: TextDirection.rtl,
-            style: TextStyle(
-              fontSize: isQuran ? 30 : 28,
-              height: 1.9,
-              fontWeight: isQuran ? FontWeight.w700 : FontWeight.w400,
+                  ),
+                // Auto-fit down to a legible floor (28sp); scroll handles the rest.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.center,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                    child: text,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

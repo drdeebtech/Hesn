@@ -8,6 +8,7 @@ import '../services/permission_service.dart';
 import '../services/storage_service.dart';
 import '../services/tts_service.dart';
 import '../services/vad_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/progress_badge.dart';
 import 'session_screen.dart';
 import 'settings_screen.dart';
@@ -131,32 +132,62 @@ class _ListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final success = Theme.of(context).extension<HesnColors>()!.success;
+    final isMorning = list.id == 'morning';
+    final icon = isMorning ? Icons.wb_sunny_rounded : Icons.nightlight_round;
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: IntrinsicHeight(
+          child: Row(
             children: [
-              Text(list.title,
-                  style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 8),
-              Text('${list.length} ذِكر',
-                  style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  ProgressBadge(completed: completed),
-                  FilledButton.icon(
-                    onPressed: onTap,
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Text('ابدأ'),
+              // RTL: content first (right), then a leading accent rail (left).
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(list.title,
+                                style: Theme.of(context).textTheme.titleMedium),
+                          ),
+                          Icon(icon, color: cs.primary, size: 28),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text('${list.length} ذِكر',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(height: 14),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ProgressBadge(completed: completed),
+                          FilledButton.icon(
+                            onPressed: onTap,
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(0, 48),
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              textStyle: const TextStyle(
+                                  fontSize: 17, fontWeight: FontWeight.w700),
+                            ),
+                            icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                            label: const Text('ابدأ'),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
+                ),
+              ),
+              Container(
+                width: 5,
+                color: completed ? success : cs.primary.withValues(alpha: 0.35),
               ),
             ],
           ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Shows the source repeat count for the current phrase. Display-only — the
-/// user counts repeats themselves (Constitution Principle IV).
+import '../util/arabic_numbers.dart';
+
+/// Gold pill showing the source repeat count as "×٣" (Arabic-Indic).
+/// Display-only — the user counts repeats themselves (Constitution Principle IV).
 class RepeatCounter extends StatelessWidget {
   const RepeatCounter({super.key, required this.repeat});
 
@@ -10,15 +12,21 @@ class RepeatCounter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (repeat <= 1) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(20),
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        'التكرار: $repeat',
-        style: Theme.of(context).textTheme.titleMedium,
+        '×${toArabicDigits(repeat)}',
+        style: TextStyle(
+          color: cs.secondary,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: .2,
+        ),
       ),
     );
   }
