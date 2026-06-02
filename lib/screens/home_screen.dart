@@ -137,57 +137,69 @@ class _ListCard extends StatelessWidget {
     final isMorning = list.id == 'morning';
     final icon = isMorning ? Icons.wb_sunny_rounded : Icons.nightlight_round;
 
-    return Card(
+    // State carried by a full border + soft background tint (not a side stripe).
+    final borderColor = completed ? success : cs.outline;
+    final tint = completed ? success.withValues(alpha: 0.06) : cs.surface;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: tint,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: completed ? 1.5 : 1),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: IntrinsicHeight(
-          child: Row(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // RTL: content first (right), then a leading accent rail (left).
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(list.title,
-                                style: Theme.of(context).textTheme.titleMedium),
-                          ),
-                          Icon(icon, color: cs.primary, size: 28),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text('${list.length} ذِكر',
-                          style: Theme.of(context).textTheme.bodyMedium),
-                      const SizedBox(height: 14),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          ProgressBadge(completed: completed),
-                          FilledButton.icon(
-                            onPressed: onTap,
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size(0, 48),
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              textStyle: const TextStyle(
-                                  fontSize: 17, fontWeight: FontWeight.w700),
-                            ),
-                            icon: const Icon(Icons.play_arrow_rounded, size: 22),
-                            label: const Text('ابدأ'),
-                          ),
-                        ],
-                      ),
-                    ],
+              Row(
+                children: [
+                  // Leading time-of-day icon disc (RTL: visually trailing).
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: cs.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: cs.primary, size: 24),
                   ),
-                ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(list.title,
+                            style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 4),
+                        Text('${list.length} ذِكر',
+                            style: Theme.of(context).textTheme.bodyMedium),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              Container(
-                width: 5,
-                color: completed ? success : cs.primary.withValues(alpha: 0.35),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ProgressBadge(completed: completed),
+                  FilledButton.icon(
+                    onPressed: onTap,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      textStyle: const TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w700),
+                    ),
+                    icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                    label: const Text('ابدأ'),
+                  ),
+                ],
               ),
             ],
           ),

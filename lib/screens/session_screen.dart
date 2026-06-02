@@ -113,11 +113,13 @@ class _SessionScreenState extends State<SessionScreen>
 
   void _onChange() {
     if (!mounted) return;
-    // Run the Done-button pulse only while the safety timeout is surfaced.
+    // Run the Done-button pulse only while the safety timeout is surfaced, and
+    // never when the user has reduced-motion enabled (accessibility/driving).
+    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     final emphasize = _controller.safetyTimeoutElapsed && !_completed;
-    if (emphasize && !_pulse.isAnimating) {
+    if (emphasize && !reduceMotion && !_pulse.isAnimating) {
       _pulse.repeat(reverse: true);
-    } else if (!emphasize && _pulse.isAnimating) {
+    } else if ((!emphasize || reduceMotion) && _pulse.isAnimating) {
       _pulse.stop();
       _pulse.value = 0;
     }
@@ -236,33 +238,44 @@ class _SessionScreenState extends State<SessionScreen>
         final opacity = emphasizeDone ? (1.0 - 0.3 * _pulse.value) : 1.0;
         return Opacity(opacity: opacity, child: child);
       },
-      child: FilledButton.icon(
-        onPressed: _completed ? null : _controller.advance,
-        style: emphasizeDone
-            ? FilledButton.styleFrom(
-                backgroundColor: hesn.warning,
-                foregroundColor: const Color(0xFF2A1500),
-                minimumSize: const Size.fromHeight(88),
-              )
-            : null,
-        icon: const Icon(Icons.check_rounded),
-        label: const Text('تم'),
+      child: Semantics(
+        button: true,
+        label: 'تم',
+        child: FilledButton.icon(
+          onPressed: _completed ? null : _controller.advance,
+          style: emphasizeDone
+              ? FilledButton.styleFrom(
+                  backgroundColor: hesn.warning,
+                  foregroundColor: const Color(0xFF2A1500),
+                  minimumSize: const Size.fromHeight(88),
+                )
+              : null,
+          icon: const Icon(Icons.check_rounded),
+          label: const Text('تم'),
+        ),
       ),
     );
 
-    return Row(
+    final bar = Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Expanded(
           flex: emphasizeDone ? 2 : 4,
-          child: OutlinedButton(
-            onPressed: _completed ? null : _controller.skip,
-            child: const Text('تجاوز'),
+          child: Semantics(
+            button: true,
+            label: 'تجاوز',
+            child: OutlinedButton(
+              onPressed: _completed ? null : _controller.skip,
+              child: const Text('تجاوز'),
+            ),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(flex: 6, child: done),
       ],
     );
+
+    // Clamp text scaling so the button labels never overflow at large sizes.
+    return MediaQuery.withClampedTextScaling(maxScaleFactor: 1.3, child: bar);
   }
 }

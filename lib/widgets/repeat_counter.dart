@@ -13,16 +13,18 @@ class RepeatCounter extends StatelessWidget {
   Widget build(BuildContext context) {
     if (repeat <= 1) return const SizedBox.shrink();
     final cs = Theme.of(context).colorScheme;
+    // Gold fill + dark on-gold text → AA-safe and keeps the gold identity
+    // (gold text on a light surface failed contrast).
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
+        color: cs.secondary,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         '×${toArabicDigits(repeat)}',
         style: TextStyle(
-          color: cs.secondary,
+          color: cs.onSecondary,
           fontSize: 18,
           fontWeight: FontWeight.w700,
           letterSpacing: .2,
