@@ -10,6 +10,8 @@ import '../services/tts_service.dart';
 import '../services/vad_service.dart';
 import '../session/session_controller.dart';
 import '../session/session_phase.dart';
+import '../theme/app_theme.dart';
+import '../util/arabic_numbers.dart';
 import '../widgets/azkar_text_view.dart';
 import '../widgets/repeat_counter.dart';
 
@@ -42,14 +44,19 @@ class SessionScreen extends StatefulWidget {
 }
 
 class _SessionScreenState extends State<SessionScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   late SessionController _controller;
+  late final AnimationController _pulse;
   bool _completed = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
     _controller = SessionController(
       tts: widget.tts,
       vad: widget.vad,
@@ -105,7 +112,18 @@ class _SessionScreenState extends State<SessionScreen>
   }
 
   void _onChange() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    // Run the Done-button pulse only while the safety timeout is surfaced, and
+    // never when the user has reduced-motion enabled (accessibility/driving).
+    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final emphasize = _controller.safetyTimeoutElapsed && !_completed;
+    if (emphasize && !reduceMotion && !_pulse.isAnimating) {
+      _pulse.repeat(reverse: true);
+    } else if ((!emphasize || reduceMotion) && _pulse.isAnimating) {
+      _pulse.stop();
+      _pulse.value = 0;
+    }
+    setState(() {});
   }
 
   Future<void> _onListComplete(String listId) async {
@@ -129,83 +147,135 @@ class _SessionScreenState extends State<SessionScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _pulse.dispose();
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final item = _controller.phase == SessionPhase.idle
         ? widget.list.items.first
         : _controller.currentItem;
     final index = _controller.index;
     final total = widget.list.length;
-    final emphasizeDone = _controller.safetyTimeoutElapsed;
+    final emphasizeDone = _controller.safetyTimeoutElapsed && !_completed;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.list.title),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4),
-          child: LinearProgressIndicator(
-            value: total == 0 ? 0 : (index + 1) / total,
-          ),
-        ),
-      ),
+      appBar: AppBar(title: Text(widget.list.title)),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
           child: Column(
             children: [
-              Text('${index + 1} / $total',
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              RepeatCounter(repeat: item.repeat),
-              const SizedBox(height: 16),
-              Expanded(child: Center(child: AzkarTextView(item: item))),
-              const SizedBox(height: 16),
-              if (_controller.ttsSpeaking)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 8),
-                  child: Text('يُتلى الآن…'),
-                )
-              else if (_controller.isVoiceEnabled)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 8),
-                  child: Text('استمع… ثم اقرأ الذكر'),
-                ),
+              // Top strip: counter + progress bar.
               Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _completed ? null : _controller.skip,
-                      icon: const Icon(Icons.skip_next),
-                      label: const Text('تجاوز'),
+                  Text(
+                    '${toArabicDigits(index + 1)} / ${toArabicDigits(total)}',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: .5,
+                      color: cs.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Expanded(
-                    flex: emphasizeDone ? 2 : 1,
-                    child: FilledButton.icon(
-                      onPressed: _completed ? null : _controller.advance,
-                      style: emphasizeDone
-                          ? FilledButton.styleFrom(
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.primary,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 18),
-                            )
-                          : null,
-                      icon: const Icon(Icons.check),
-                      label: const Text('تم'),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: total == 0 ? 0 : (index + 1) / total,
+                        minHeight: 8,
+                      ),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: RepeatCounter(repeat: item.repeat),
+              ),
+              const SizedBox(height: 8),
+              Expanded(child: AzkarTextView(item: item)),
+              const SizedBox(height: 12),
+              _statusHint(emphasizeDone),
+              const SizedBox(height: 12),
+              _bottomBar(emphasizeDone),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _statusHint(bool emphasizeDone) {
+    if (emphasizeDone) {
+      return Text('▸ تابع',
+          style: TextStyle(
+              color: Theme.of(context).extension<HesnColors>()!.warning,
+              fontWeight: FontWeight.w700));
+    }
+    final cs = Theme.of(context).colorScheme;
+    final String? hint = _controller.ttsSpeaking
+        ? 'يُتلى الآن…'
+        : (_controller.isVoiceEnabled ? 'استمع… ثم اقرأ الذكر' : null);
+    return SizedBox(
+      height: 20,
+      child: hint == null
+          ? null
+          : Text(hint, style: TextStyle(color: cs.onSurfaceVariant)),
+    );
+  }
+
+  Widget _bottomBar(bool emphasizeDone) {
+    final hesn = Theme.of(context).extension<HesnColors>()!;
+    final done = AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, child) {
+        final opacity = emphasizeDone ? (1.0 - 0.3 * _pulse.value) : 1.0;
+        return Opacity(opacity: opacity, child: child);
+      },
+      child: Semantics(
+        button: true,
+        label: 'تم',
+        child: FilledButton.icon(
+          onPressed: _completed ? null : _controller.advance,
+          style: emphasizeDone
+              ? FilledButton.styleFrom(
+                  backgroundColor: hesn.warning,
+                  foregroundColor: const Color(0xFF2A1500),
+                  minimumSize: const Size.fromHeight(88),
+                )
+              : null,
+          icon: const Icon(Icons.check_rounded),
+          label: const Text('تم'),
+        ),
+      ),
+    );
+
+    final bar = Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          flex: emphasizeDone ? 2 : 4,
+          child: Semantics(
+            button: true,
+            label: 'تجاوز',
+            child: OutlinedButton(
+              onPressed: _completed ? null : _controller.skip,
+              child: const Text('تجاوز'),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(flex: 6, child: done),
+      ],
+    );
+
+    // Clamp text scaling so the button labels never overflow at large sizes.
+    return MediaQuery.withClampedTextScaling(maxScaleFactor: 1.3, child: bar);
   }
 }
