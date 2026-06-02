@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hesn/models/app_settings.dart';
 import 'package:hesn/models/azkar.dart';
 import 'package:hesn/screens/session_screen.dart';
+import 'package:hesn/theme/app_theme.dart';
 
 import '../fakes/fakes.dart';
 
@@ -21,9 +22,9 @@ AzkarList _list(int n) => AzkarList(
       ],
     );
 
-Widget _wrap(Widget child) => Directionality(
-      textDirection: TextDirection.rtl,
-      child: MaterialApp(home: child),
+Widget _wrap(Widget child) => MaterialApp(
+      theme: AppTheme.light(),
+      home: Directionality(textDirection: TextDirection.rtl, child: child),
     );
 
 void main() {
@@ -61,9 +62,9 @@ void main() {
     )));
     await tester.pumpAndSettle();
 
-    expect(find.text('1 / 2'), findsOneWidget);
+    expect(find.text('١ / ٢'), findsOneWidget);
     await tester.tap(find.text('تم'));
     await tester.pumpAndSettle();
-    expect(find.text('2 / 2'), findsOneWidget);
+    expect(find.text('٢ / ٢'), findsOneWidget);
   });
 }
