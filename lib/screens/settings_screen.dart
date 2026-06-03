@@ -45,8 +45,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _pickTime(bool morning) async {
-    final current = AppSettings.parseTime(
-        morning ? _settings.morningReminderTime : _settings.eveningReminderTime);
+    final current = AppSettings.parseTime(morning
+        ? _settings.morningReminderTime
+        : _settings.eveningReminderTime);
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: current.$1, minute: current.$2),
@@ -103,41 +104,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             _save(_settings.copyWith(handsFreeMode: v)),
                       ),
                       Padding(
-                        padding:
-                            const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text('الحساسية',
-                                style:
-                                    Theme.of(context).textTheme.bodyLarge),
-                            Slider(
-                              value: _settings.sensitivity,
-                              onChanged: _settings.voiceDetectionEnabled
-                                  ? (v) => setState(() => _settings =
-                                      _settings.copyWith(sensitivity: v))
-                                  : null,
-                              onChangeEnd: _settings.voiceDetectionEnabled
-                                  ? (v) =>
-                                      _save(_settings.copyWith(sensitivity: v))
-                                  : null,
-                            ),
-                            Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('عالية',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium),
-                                Text('منخفضة',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium),
-                              ],
-                            ),
-                          ],
-                        ),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: _sensitivity(cs),
                       ),
                     ],
                   ),
@@ -162,6 +130,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _sensitivity(ColorScheme cs) {
+    final text = Theme.of(context).textTheme;
+    final enabled = _settings.voiceDetectionEnabled;
+    final percent = (_settings.sensitivity * 100).round();
+    final disabledColor = cs.onSurfaceVariant.withValues(alpha: 0.5);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('الحساسية',
+                style: text.bodyLarge
+                    ?.copyWith(color: enabled ? null : disabledColor)),
+            // Live value readout.
+            Text('${toArabicDigits(percent.toString())}٪',
+                style: text.bodyLarge?.copyWith(
+                    color: enabled ? cs.primary : disabledColor,
+                    fontWeight: FontWeight.w700)),
+          ],
+        ),
+        const SizedBox(height: 2),
+        // Context caption (P3): what the control actually does.
+        Text('تحدد مستوى الصوت اللازم للكشف — ارفعها في الأماكن الهادئة.',
+            style: text.bodyMedium),
+        Slider(
+          value: _settings.sensitivity,
+          divisions: 10,
+          label: '${toArabicDigits(percent.toString())}٪',
+          onChanged: enabled
+              ? (v) =>
+                  setState(() => _settings = _settings.copyWith(sensitivity: v))
+              : null,
+          onChangeEnd:
+              enabled ? (v) => _save(_settings.copyWith(sensitivity: v)) : null,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('عالية', style: text.bodyMedium),
+            Text('منخفضة', style: text.bodyMedium),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _sectionHeader(String text) => Padding(
         padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
         child: Text(text,
@@ -173,19 +188,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
   Widget _timeRow(String label, String time, VoidCallback onTap) {
+    final cs = Theme.of(context).colorScheme;
+    // Single affordance: the whole row is the tap target. The trailing pill is
+    // a value readout (not a second button), so there's no double affordance.
     return ListTile(
-      leading: Icon(Icons.notifications_active_outlined,
-          color: Theme.of(context).colorScheme.primary),
+      leading: Icon(Icons.notifications_active_outlined, color: cs.primary),
       title: Text(label),
-      trailing: FilledButton.tonal(
-        onPressed: onTap,
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(0, 40),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          textStyle:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(999),
         ),
-        child: Text(toArabicDigits(time)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(toArabicDigits(time),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface)),
+            const SizedBox(width: 6),
+            Icon(Icons.edit_outlined, size: 16, color: cs.onSurfaceVariant),
+          ],
+        ),
       ),
       onTap: onTap,
     );

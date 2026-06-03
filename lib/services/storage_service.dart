@@ -14,11 +14,16 @@ abstract class StorageService {
   /// dateKey != [todayKey] (date-rollover, FR-012).
   Future<DailyProgress> loadProgress(String todayKey);
   Future<void> markListComplete(String listId, String todayKey);
+
+  /// First-run flag: true once the user has seen the onboarding card.
+  Future<bool> hasSeenOnboarding();
+  Future<void> markOnboardingSeen();
 }
 
 class SharedPrefsStorageService implements StorageService {
   static const _settingsKey = 'app_settings';
   static const _progressKey = 'daily_progress';
+  static const _onboardingKey = 'seen_onboarding';
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
 
@@ -56,5 +61,17 @@ class SharedPrefsStorageService implements StorageService {
     final updated = today.markCompleted(listId);
     final p = await _prefs;
     await p.setString(_progressKey, jsonEncode(updated.toJson()));
+  }
+
+  @override
+  Future<bool> hasSeenOnboarding() async {
+    final p = await _prefs;
+    return p.getBool(_onboardingKey) ?? false;
+  }
+
+  @override
+  Future<void> markOnboardingSeen() async {
+    final p = await _prefs;
+    await p.setBool(_onboardingKey, true);
   }
 }
