@@ -82,7 +82,8 @@ class _SessionScreenState extends State<SessionScreen>
     // One-time text-only notice when no Arabic TTS voice is available (FR-028).
     if (mounted && !_controller.audioAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('لا يتوفر صوت عربي على الجهاز — سيظهر النص بدون قراءة صوتية.'),
+        content:
+            Text('لا يتوفر صوت عربي على الجهاز — سيظهر النص بدون قراءة صوتية.'),
         duration: Duration(seconds: 5),
       ));
     }
@@ -115,7 +116,8 @@ class _SessionScreenState extends State<SessionScreen>
     if (!mounted) return;
     // Run the Done-button pulse only while the safety timeout is surfaced, and
     // never when the user has reduced-motion enabled (accessibility/driving).
-    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     final emphasize = _controller.safetyTimeoutElapsed && !_completed;
     if (emphasize && !reduceMotion && !_pulse.isAnimating) {
       _pulse.repeat(reverse: true);
@@ -162,53 +164,92 @@ class _SessionScreenState extends State<SessionScreen>
     final total = widget.list.length;
     final emphasizeDone = _controller.safetyTimeoutElapsed && !_completed;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.list.title)),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
-          child: Column(
-            children: [
-              // Top strip: counter + progress bar.
-              Row(
-                children: [
-                  Text(
-                    '${toArabicDigits(index + 1)} / ${toArabicDigits(total)}',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: .5,
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        value: total == 0 ? 0 : (index + 1) / total,
-                        minHeight: 8,
+    return PopScope(
+      // Guard an in-progress session: a stray back gesture shouldn't silently
+      // drop progress. Once complete, allow the pop through untouched.
+      canPop: _completed,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _confirmExit();
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(widget.list.title)),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+            child: Column(
+              children: [
+                // Top strip: counter + progress bar.
+                Row(
+                  children: [
+                    Text(
+                      '${toArabicDigits(index + 1)} / ${toArabicDigits(total)}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: .5,
+                        color: cs.onSurfaceVariant,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: RepeatCounter(repeat: item.repeat),
-              ),
-              const SizedBox(height: 8),
-              Expanded(child: AzkarTextView(item: item)),
-              const SizedBox(height: 12),
-              _statusHint(emphasizeDone),
-              const SizedBox(height: 12),
-              _bottomBar(emphasizeDone),
-            ],
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          value: total == 0 ? 0 : (index + 1) / total,
+                          minHeight: 8,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: RepeatCounter(repeat: item.repeat),
+                ),
+                const SizedBox(height: 8),
+                Expanded(child: AzkarTextView(item: item)),
+                const SizedBox(height: 12),
+                _statusHint(emphasizeDone),
+                const SizedBox(height: 12),
+                _bottomBar(emphasizeDone),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _confirmExit() async {
+    // Pause TTS + mic while the user decides (Principle II/III: nothing runs
+    // behind the dialog).
+    _controller.pause();
+    final exit = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('إنهاء الجلسة؟'),
+        content: const Text('لم تكمل هذه القائمة بعد. هل تريد الخروج؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('متابعة'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('خروج'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (exit == true) {
+      Navigator.of(context).pop();
+    } else {
+      // Stay: replay the current phrase from the start (same as resume, FR-029).
+      _controller.replayCurrent();
+    }
   }
 
   Widget _statusHint(bool emphasizeDone) {

@@ -10,6 +10,7 @@ import '../services/tts_service.dart';
 import '../services/vad_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/progress_badge.dart';
+import 'onboarding_screen.dart';
 import 'session_screen.dart';
 import 'settings_screen.dart';
 
@@ -56,6 +57,21 @@ class _HomeScreenState extends State<HomeScreen> {
       _progress = progress;
       _loading = false;
     });
+    await _maybeShowOnboarding();
+  }
+
+  /// Shows the first-run card once, then records the seen-flag.
+  Future<void> _maybeShowOnboarding() async {
+    if (await widget.storage.hasSeenOnboarding()) return;
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (ctx) =>
+            OnboardingScreen(onDone: () => Navigator.of(ctx).pop()),
+      ),
+    );
+    await widget.storage.markOnboardingSeen();
   }
 
   Future<void> _openList(AzkarList list) async {
@@ -109,8 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 for (final list in _lists!)
                   _ListCard(
                     list: list,
-                    completed:
-                        _progress?.isCompleted(list.id) ?? false,
+                    completed: _progress?.isCompleted(list.id) ?? false,
                     onTap: () => _openList(list),
                   ),
               ],

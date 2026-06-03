@@ -4,6 +4,7 @@ import 'package:hesn/models/app_settings.dart';
 import 'package:hesn/models/daily_progress.dart';
 import 'package:hesn/services/storage_service.dart';
 import 'package:hesn/services/cue_service.dart';
+import 'package:hesn/services/notification_service.dart';
 import 'package:hesn/services/permission_service.dart';
 import 'package:hesn/services/tts_service.dart';
 import 'package:hesn/services/vad_service.dart';
@@ -111,4 +112,29 @@ class FakeStorageService implements StorageService {
     final today = await loadProgress(todayKey);
     _progress = today.markCompleted(listId);
   }
+
+  bool seenOnboarding = false;
+
+  @override
+  Future<bool> hasSeenOnboarding() async => seenOnboarding;
+
+  @override
+  Future<void> markOnboardingSeen() async => seenOnboarding = true;
+}
+
+class FakeNotificationService implements NotificationService {
+  AppSettings? lastRescheduled;
+
+  @override
+  Future<void> init({void Function(String listId)? onTapList}) async {}
+
+  @override
+  Future<void> rescheduleFromSettings(AppSettings settings) async =>
+      lastRescheduled = settings;
+
+  @override
+  Future<void> cancelAll() async {}
+
+  @override
+  Future<String?> launchListId() async => null;
 }
